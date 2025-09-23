@@ -3,6 +3,7 @@ import importlib
 import pkgutil
 from fastapi import FastAPI, APIRouter, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
+
 from backend.mcp_server import mcp
 import backend.mcp_server.tools as tools_pkg
 
@@ -42,5 +43,13 @@ async def run_tool(tool_name: str, payload: dict = Body(...)):
 
 # Register router with app
 app.include_router(router)
+
+@app.get("/")
+async def root():
+    return {
+        "status": "ok",
+        "message": "SPAC Tracker backend is live 🚀",
+        "endpoints": ["/tools/{tool_name}"]
+    }
 
 
