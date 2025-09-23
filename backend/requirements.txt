@@ -1,0 +1,27 @@
+# Core LLM + LangGraph
+langchain>=0.2.0
+langgraph>=0.0.30
+langchain-openai>=0.1.0
+langchain-mcp-adapters>=0.1.0
+
+# MCP server
+mcp>=0.2.0
+anyio>=4.0.0
+
+# OpenAI SDK
+openai>=1.6.0
+
+# Database
+supabase>=2.3.4
+
+# Finance + Analysis
+yfinance>=0.2.50
+pandas>=2.0.0
+matplotlib>=3.8.0
+
+# Server (optional, for exposing API to frontend)
+fastapi>=0.110.0
+uvicorn>=0.27.0
+
+# Utilities
+python-dotenv>=1.0.1

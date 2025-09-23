@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "MCP Server (HTTP for Frontend)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/mcp_server/mcp_server.py",
+      "args": ["http"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "MCP Server (STDIO for LLM)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/mcp_server/mcp_server.py",
+      "args": ["stdio"],
+      "console": "integratedTerminal"
+    }
+  ]
+}
