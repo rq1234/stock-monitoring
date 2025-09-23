@@ -80,6 +80,40 @@ OPENAI_API_KEY=<your_openai_key>
 - `seed_spac_list.py` → populate SPAC tickers in Supabase  
 - Workflow definitions in `workflows/`  
 
+### Overview
+
+#### Intelligent Agents
+
+This project includes four autonomous agents designed to analyze SPAC (Special Purpose Acquisition Company) activity, enforce rules, and provide actionable insights. These agents run as part of the backend (FastAPI + MCP) and are orchestrated by LangChain Graph and the MCP (Modular Command Protocol) agent for modular extensibility.
+
+#### Agents
+
+Analyzer Agent – Evaluates financial and market data for anomalies.
+Data Agent – Fetches and validates raw SPAC datasets from Supabase and external APIs.
+Lifecycle Agent – Tracks SPAC lifecycle events (IPO, merger, deadlines).
+Risk Agent – Assesses compliance and risk factors, ensuring rules are followed.
+
+#### Reporting & Alerts
+
+Reporter Agent – Summarizes findings into daily reports.
+Sends Discord alerts for anomalies, risk flags, and rule violations.
+Alerts are formatted as Markdown for easy reading.
+
+#### Orchestration
+
+LangChain Graph – Manages agent workflows, allowing outputs from one agent to feed into the next (pipeline execution).
+MCP Agent – Acts as the bridge between the agents and the API layer. It can:
+Ask clarifying questions if the user request is ambiguous.
+Dynamically select tools from the MCP registry (alerts, anomalies, filings, price, volume, etc.).
+Expose tools as API endpoints (/tools/...) so they can be invoked directly by the frontend or other services.
+
+#### Advantages
+Modularity – Each agent is self-contained and can be extended or swapped independently.
+Automation – Data flows automatically from fetch → analyze → report → alert.
+Real-time Monitoring – Discord notifications provide instant visibility into risks.
+Intelligent Routing – MCP agent ensures the right tool is selected for the job, reducing errors and increasing flexibility.
+Scalability – LangChain Graph orchestrates complex multi-step workflows, making it easy to add new rules or monitoring logic.
+
 ---
 
 ##  Project Structure
