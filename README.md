@@ -177,4 +177,23 @@ frontend/
  └── vite.config.ts       # Vite config
 
 ```
+## ⚙️ Architecture
+```bash
+- **Frontend (Vercel)**  
+  The React frontend is deployed on Vercel. Any pushes to the `main` branch under the `/frontend` folder trigger an automatic redeploy.  
+  URL: `https://<your-frontend>.vercel.app`
 
+- **Backend (Render)**  
+  The FastAPI backend lives in `/backend` and is hosted on Render.  
+  Render automatically redeploys whenever commits are pushed to the GitHub repo’s `main` branch (if linked).  
+  URL: `https://spac-tracker.onrender.com`
+
+- **Database (Supabase)**  
+  Supabase stores ticker lists, anomaly reports, and SEC filings.  
+  Credentials are stored in `.env` and passed into Render and Vercel as environment variables.
+
+- **Cron Jobs (GitHub Actions)**  
+  A GitHub workflow (`.github/workflows/cron.yml`) runs daily on a schedule.  
+  It triggers backend tasks such as refreshing ticker data and anomaly detection.
+
+```  
