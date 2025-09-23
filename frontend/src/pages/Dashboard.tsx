@@ -41,8 +41,12 @@ const Dashboard: React.FC = () => {
   // 🔔 Global Alerts
   const [alertsMarkdown, setAlertsMarkdown] = useState<string>("");
   const [loadingAlerts, setLoadingAlerts] = useState(false);
-  const [startDate, setStartDate] = useState<string>("");
+  const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  const [startDate, setStartDate] = useState<string>(today);
   const [endDate, setEndDate] = useState<string>("");
+
+  const tickerSelectorRef = React.useRef<HTMLDivElement>(null);
+  const [highlight, setHighlight] = useState(false);
 
   // ---- Load tickers on mount ----
   useEffect(() => {
@@ -150,95 +154,116 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* 🔔 Alerts Panel */}
-        <ErrorBoundary fallback={<p>⚠️ Failed to load alerts.</p>}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                ⚡ Daily Alerts
-              </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={exportMarkdown}
-                  className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  <Download className="w-4 h-4" /> Markdown
-                </button>
-                <button
-                  onClick={exportCSV}
-                  className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  <Download className="w-4 h-4" /> CSV
-                </button>
-              </div>
-            </div>
+<ErrorBoundary fallback={<p>⚠️ Failed to load alerts.</p>}>
+  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+    <div className="flex justify-between items-center">
+      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+        ⚡ Daily Alerts
+        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+          Click tickers to view details
+        </span>
+      </h2>
+      <div className="flex gap-2">
+        <button
+          onClick={exportMarkdown}
+          className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        >
+          <Download className="w-4 h-4" /> Markdown
+        </button>
+        <button
+          onClick={exportCSV}
+          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          <Download className="w-4 h-4" /> CSV
+        </button>
+      </div>
+    </div>
 
-            {/* Date Range Filters */}
-            <div className="flex gap-4 mt-4">
-              <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2"
-                />
-              </div>
-              
-              <button
-                onClick={fetchAlerts}
-                className="self-end px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-              >
-                Refresh
-              </button>
-            </div>
+    {/* Tip below header */}
+    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+      <strong>💡 Tip:</strong> Click on a 
+      <span className="font-bold text-blue-600"> ticker</span> in the list to auto-select it in the dropdown.
+    </p>
 
-            {/* Alerts Markdown */}
-            {loadingAlerts ? (
-              <p className="text-gray-500 mt-4">Loading alerts...</p>
-            ) : alertsMarkdown ? (
-              <div className="prose dark:prose-invert mt-4">
-                <ReactMarkdown
-                  components={{
-                    a: ({ node, ...props }) => {
-                      const ticker = props.href || "";
-                      const isSelected = selectedTicker === ticker;
+    {/* Date Range Filters */}
+    <div className="flex gap-4 mt-4">
+      <div>
+        <label className="block text-sm text-gray-600 dark:text-gray-400">
+          Start Date
+        </label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="mt-1 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2"
+        />
+      </div>
+      
+      <button
+        onClick={fetchAlerts}
+        className="self-end px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+      >
+        Refresh
+      </button>
+    </div>
 
-                      return (
-                        <button
-                          onClick={() => {
-                            setSelectedTicker(ticker);
-                            fetchData();
-                          }}
-                          style={{
-                            background: isSelected ? "rgba(59, 130, 246, 0.1)" : "none",
-                            border: "none",
-                            color: isSelected ? "blue" : "inherit",
-                            cursor: "pointer",
-                            padding: "2px 4px",
-                            borderRadius: "4px",
-                            font: "inherit",
-                          }}
-                        >
-                          {props.children}
-                        </button>
-                      );
-                    },
-                  }}
-                >
-                  {alertsMarkdown}
-                </ReactMarkdown>
-              </div>
-            ) : (
-              <p className="text-gray-500 mt-4">✅ No anomalies found in range.</p>
-            )}
-          </div>
-        </ErrorBoundary>
+    {/* Alerts Markdown */}
+    {loadingAlerts ? (
+      <p className="text-gray-500 mt-4">Loading alerts...</p>
+    ) : alertsMarkdown ? (
+      <div className="prose dark:prose-invert mt-4">
+        <ReactMarkdown
+  components={{
+    a: ({ node, ...props }) => {
+      const ticker = props.href || "";
+      const isSelected = selectedTicker === ticker;
+
+      return (
+        <button
+          onClick={() => {
+            setSelectedTicker(ticker);
+            fetchData();
+
+            // ✅ Smooth scroll to ticker dropdown
+            tickerSelectorRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }}
+          style={{
+            background: isSelected
+              ? "rgba(59, 130, 246, 0.2)"
+              : "rgba(59, 130, 246, 0.05)",
+            border: "1px solid rgba(59, 130, 246, 0.4)",
+            color: "blue",
+            cursor: "pointer",
+            padding: "2px 6px",
+            borderRadius: "6px",
+            fontWeight: "bold",
+          }}
+        >
+          {props.children}
+        </button>
+      );
+    },
+  }}
+>
+  {alertsMarkdown}
+</ReactMarkdown>
+
+      </div>
+    ) : (
+      <p className="text-gray-500 mt-4">✅ No anomalies found in range.</p>
+    )}
+  </div>
+</ErrorBoundary>
+
 
         {/* Ticker Selector */}
         <ErrorBoundary fallback={<p>⚠️ Ticker selector failed.</p>}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div 
+          ref={tickerSelectorRef}
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <TickerSelector
               tickers={tickers}
               selectedTicker={selectedTicker}
