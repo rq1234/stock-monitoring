@@ -4,6 +4,9 @@
 const MCP_BASE_URL =
   import.meta.env.VITE_MCP_BASE_URL || "http://localhost:8000";
 
+console.log("Raw VITE_MCP_BASE_URL:", import.meta.env.VITE_MCP_BASE_URL);
+console.log("Final MCP_BASE_URL:", MCP_BASE_URL);
+
 // --- Generic call wrapper ---
 async function callMCP<T = any>(
   tool: string,
