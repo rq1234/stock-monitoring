@@ -2,7 +2,7 @@
 
 // Use env variable for MCP base URL
 const MCP_BASE_URL =
-  process.env.REACT_APP_MCP_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_MCP_BASE_URL || "http://localhost:8000";
 
 // --- Generic call wrapper ---
 async function callMCP<T = any>(
