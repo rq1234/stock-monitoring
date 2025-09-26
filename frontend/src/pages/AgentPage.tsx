@@ -21,6 +21,7 @@ const AgentPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Auto-scroll on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -33,28 +34,35 @@ const AgentPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/mcp/agent", {
+      const MCP_BASE_URL =
+        process.env.REACT_APP_MCP_BASE_URL || "http://localhost:8000";
+
+      // 👇 define payload properly
+      const payload = {
+        query: input, // or { args: {...} } depending on what /mcp/agent expects
+      };
+
+      const res = await fetch(`${MCP_BASE_URL}/mcp/agent`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: input }), // backend expects { query }
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
-      // Unpack backend { answer: ... }
+      // Backend returns { answer: ... }
       const answer = data.answer;
-
       let msg;
+
       if (typeof answer === "string") {
-        // Plain text answer
         msg = { role: "assistant", type: "text", content: answer };
       } else if (answer.type === "chart") {
-        msg = { role: "assistant", ...answer }; // chart rendering
+        msg = { role: "assistant", ...answer };
       } else if (answer.type === "filings") {
-        msg = { role: "assistant", ...answer }; // filings rendering
+        msg = { role: "assistant", ...answer };
       } else if (answer.type === "anomalies") {
-        msg = { role: "assistant", ...answer }; // anomalies rendering
+        msg = { role: "assistant", ...answer };
       } else {
         msg = { role: "assistant", type: "text", content: JSON.stringify(answer) };
       }
