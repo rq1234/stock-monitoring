@@ -147,14 +147,14 @@ def build_markdown_from_anomalies(anomalies: list) -> str:
 
 
 
-def run_reporter_agent(state: dict = None) -> dict:
+def run_reporter_agent(state: dict = None, target_date: str | None = None) -> dict:
     """Reporter agent entrypoint."""
-    today = date.today().isoformat()
+    target_date = target_date or date.today().isoformat()
 
     response = (
         supabase.table("anomaly_reports")
         .select("ticker, trade_date, anomaly_type, description")
-        .eq("trade_date", today)
+        .eq("trade_date", target_date)
         .execute()
     )
     anomalies = [normalize_anomaly(a) for a in (response.data or [])]
@@ -164,18 +164,18 @@ def run_reporter_agent(state: dict = None) -> dict:
 
     # Build + save report
     content = build_markdown_from_anomalies(anomalies)
-    filename = f"spac_alerts_{today}.md"
+    filename = f"spac_alerts_{target_date}.md"
     path = save_markdown_report(content, filename)
 
     anomaly_count = len(anomalies)
     summary = "✅ No anomalies today." if anomaly_count == 0 else f"⚡ {anomaly_count} anomalies detected today."
 
     # Send to Discord
-    send_to_discord(path, summary, f"📊 SPAC Anomaly Report for {today}")
+    send_to_discord(path, summary, f"📊 SPAC Anomaly Report for {target_date}")
 
     # Log reporting event
     supabase.table("alerts_log").upsert({
-        "alert_date": today,
+        "alert_date": target_date,
         "alert_channel": "discord"
     }).execute()
 

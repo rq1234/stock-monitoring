@@ -6,17 +6,32 @@ from datetime import date
 
 @mcp.tool()
 def get_alerts_markdown(start_date: str = None) -> dict:
+    """
+    Fetch and render anomalies for a specific day.
+    Only returns entries with exact trade_date = start_date.
+    """
     today = date.today().isoformat()
-    start_date = start_date or today
-    
+    target_date = start_date or today
+
+    print(f"📅 Fetching anomalies for {target_date}")
 
     response = (
         supabase.table("anomaly_reports")
         .select("ticker, trade_date, anomaly_type, description")
-        .gte("trade_date", start_date)
+        .eq("trade_date", target_date)  # ✅ match exact date
         .execute()
     )
+
     anomalies = [normalize_anomaly(a) for a in (response.data or [])]
+    print(f"✅ Found {len(anomalies)} anomalies for {target_date}")
+
     md = build_markdown_from_anomalies(anomalies)
 
-    return {"date": today, "count": len(anomalies), "markdown": md}
+    return {
+        "date": target_date,
+        "count": len(anomalies),
+        "markdown": md
+    }
+
+
+

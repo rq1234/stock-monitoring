@@ -11,15 +11,39 @@ from mcp.client.stdio import stdio_client
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+
 async def run_agent(user_query: str, structured: bool = False) -> str:
     """
     Run the MCP agent with the given user query and return the response.
     - If structured=True, the agent will try to return JSON instead of free text.
     """
 
+    SYSTEM_PROMPT = """
+You are MCP Agent — a finance-focused AI assistant with access to the following tools:
+
+🛠️ Tools you can use:
+- get_stock_price(ticker, period, interval): Fetches stock prices and computes support/resistance
+- get_volume_history(ticker, days): Returns recent trading volumes
+- get_filings(ticker): Summarizes recent SEC filings (8-K, 10-K)
+- detect_anomalies(ticker): Detects unusual trading behavior or volume spikes
+
+💡 Your goals:
+1. Understand whether the user wants **data**, **analysis**, or both.
+2. If data → use the correct MCP tool.
+3. If analysis → explain using reasoning grounded in financial logic.
+4. If both → fetch data first, then analyze it clearly and concisely.
+5. Always provide context (e.g., what metrics mean, or why the data matters).
+6. Avoid hallucinating — if a ticker or data is unavailable, say so.
+
+🎯 Output rules:
+- Be concise but insightful.
+- When `structured=True`, return valid JSON with keys like "type", "content", "ticker", etc.
+"""
+
+    # Start the MCP server (the one managing your data tools)
     server_params = StdioServerParameters(
         command="python",
-        args=["-m", "backend.mcp_server.mcp_server"],  # start your MCP server as subprocess
+        args=["-m", "backend.mcp_server.mcp_server"],  # start your MCP server as a subprocess
     )
 
     try:
@@ -27,29 +51,32 @@ async def run_agent(user_query: str, structured: bool = False) -> str:
             async with ClientSession(read, write) as session:
                 await session.initialize()
 
-                # 🔧 Load MCP tools
+                # 🔧 Load MCP tools dynamically
                 tools = await load_mcp_tools(session)
                 if not tools:
                     return {"type": "error", "content": "⚠️ No tools were loaded. Check your MCP server."}
 
-                # 🔧 Initialize LLM
+                # 🔧 Initialize OpenAI LLM
                 llm = ChatOpenAI(
                     model="gpt-4.1-mini",
                     temperature=0,
                     openai_api_key=OPENAI_API_KEY,
                 )
 
-                # 🔧 Create agent
+                # 🔧 Create a ReAct-style agent (LLM + tools)
                 agent = create_react_agent(llm, tools)
 
-                # ✅ Build messages
-                messages = [{"role": "user", "content": user_query}]
+                # ✅ Construct conversation context (include system prompt)
+                messages = [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_query}
+                ]
+
                 if structured:
                     messages.append({
                         "role": "system",
                         "content": (
-                            "Respond ONLY in valid JSON. "
-                            "Use one of these formats: "
+                            "Return ONLY valid JSON. Use one of the formats below:\n"
                             '{"type": "text", "content": "..."} OR '
                             '{"type": "chart", "ticker": "...", "data": [...]} OR '
                             '{"type": "filings", "ticker": "...", "filings": [...]} OR '
@@ -65,7 +92,7 @@ async def run_agent(user_query: str, structured: bool = False) -> str:
                     traceback.print_exc()
                     return {"type": "error", "content": f"⚠️ MCP agent error (ainvoke): {str(inner_e)}"}
 
-                # ✅ Validate response
+                # ✅ Validate and return
                 if not result or "messages" not in result:
                     return {"type": "error", "content": "⚠️ MCP agent returned an unexpected result."}
 
@@ -75,3 +102,4 @@ async def run_agent(user_query: str, structured: bool = False) -> str:
         print("💥 MCP client failed:", outer_e)
         traceback.print_exc()
         return {"type": "error", "content": f"⚠️ MCP agent error: {str(outer_e)}"}
+

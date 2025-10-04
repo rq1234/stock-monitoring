@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
+const MCP_BASE_URL =
+  import.meta.env.VITE_MCP_BASE_URL || "http://localhost:8000";
+
 const MyChartComponent = ({ data, ticker }: { data: any[]; ticker: string }) => (
   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4">
     <h3 className="font-bold mb-2">{ticker} Volume Chart</h3>
@@ -21,7 +24,7 @@ const AgentPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-scroll on new messages
+  // Auto-scroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -34,13 +37,7 @@ const AgentPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const MCP_BASE_URL =
-        process.env.REACT_APP_MCP_BASE_URL || "http://localhost:8000";
-
-      // 👇 define payload properly
-      const payload = {
-        query: input, // or { args: {...} } depending on what /mcp/agent expects
-      };
+      const payload = { query: input };
 
       const res = await fetch(`${MCP_BASE_URL}/mcp/agent`, {
         method: "POST",
@@ -51,17 +48,16 @@ const AgentPage: React.FC = () => {
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
-      // Backend returns { answer: ... }
-      const answer = data.answer;
       let msg;
+      const answer = data.answer;
 
       if (typeof answer === "string") {
         msg = { role: "assistant", type: "text", content: answer };
-      } else if (answer.type === "chart") {
+      } else if (answer?.type === "chart") {
         msg = { role: "assistant", ...answer };
-      } else if (answer.type === "filings") {
+      } else if (answer?.type === "filings") {
         msg = { role: "assistant", ...answer };
-      } else if (answer.type === "anomalies") {
+      } else if (answer?.type === "anomalies") {
         msg = { role: "assistant", ...answer };
       } else {
         msg = { role: "assistant", type: "text", content: JSON.stringify(answer) };
